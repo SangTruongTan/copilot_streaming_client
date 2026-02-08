@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copilot Streaming Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            max-height: 800px;
+        }
+
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .output-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .output-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .output-area::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .output-area::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .message.user {
+            background: #ede9fe;
+            border-left-color: #667eea;
+            margin-left: 20px;
+        }
+
+        .message.assistant {
+            background: white;
+            border-left-color: #764ba2;
+        }
+
+        .message.system {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+            font-size: 13px;
+            color: #166534;
+        }
+
+        .message.error {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+            color: #991b1b;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .stat-item {
+            background: #f3f4f6;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            color: #1f2937;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .input-area {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-fields {
+            display: flex;
+            gap: 12px;
+        }
+
+        #promptInput {
+            flex: 1;
+            padding: 12px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        #promptInput:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .model-select {
+            padding: 12px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .model-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        #sendButton {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        #sendButton:hover {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        #sendButton:active {
+            transform: scale(0.98);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #9ca3af;
+            font-size: 16px;
+        }
+
+        .quota-info {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #92400e;
+        }
+
+        .quota-info strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #b45309;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Copilot Streaming Demo</h1>
+            <p>Real-time streaming responses from GitHub Copilot</p>
+        </div>
+
+        <div class="content">
+            <div class="output-area" id="outputArea">
+                <div class="empty-state">
+                    Start a conversation to see responses stream in real-time
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <div class="input-label">Your Message</div>
+                        <div class="input-fields">
+                            <input
+                                type="text"
+                                id="promptInput"
+                                placeholder="Ask me anything..."
+                                disabled
+                            >
+                            <select id="modelSelect" class="model-select" disabled>
+                                <option value="gpt-4.1">GPT-4.1 (Free)</option>
+                                <option value="claude-sonnet-4.5">Claude Sonnet 4.5 (1x)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="sendButton" disabled>Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const outputArea = document.getElementById("outputArea");
+        const promptInput = document.getElementById("promptInput");
+        const modelSelect = document.getElementById("modelSelect");
+        const sendButton = document.getElementById("sendButton");
+
+        let isLoading = false;
+        let connectionReady = false;
+
+        // Check server health on load
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const response = await fetch("/api/health");
+                if (response.ok) {
+                    connectionReady = true;
+                    promptInput.disabled = false;
+                    modelSelect.disabled = false;
+                    sendButton.disabled = false;
+                    outputArea.innerHTML = "";
+                    addSystemMessage("Connected to Copilot. Ready to chat!");
+                }
+            } catch (e) {
+                addSystemMessage("❌ Failed to connect to server. Make sure it's running.", true);
+            }
+        });
+
+        sendButton.addEventListener("click", () => handleSend());
+        promptInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter" && !isLoading && connectionReady) {
+                handleSend();
+            }
+        });
+
+        async function handleSend() {
+            const prompt = promptInput.value.trim();
+            if (!prompt || isLoading || !connectionReady) return;
+
+            isLoading = true;
+            promptInput.disabled = true;
+            modelSelect.disabled = true;
+            sendButton.disabled = true;
+
+            // Add user message to output
+            addMessage(prompt, "user");
+            promptInput.value = "";
+
+            try {
+                const model = modelSelect.value;
+                const response = await fetch(`/api/chat?prompt=${encodeURIComponent(prompt)}&model=${encodeURIComponent(model)}`, {
+                    method: "POST"
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    addSystemMessage(`❌ Error: ${error.detail}`, true);
+                    return;
+                }
+
+                // Stream the response
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let assistantDiv = null;
+                let buffer = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop(); // Keep incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+
+                        try {
+                            const event = JSON.parse(line);
+                            handleStreamEvent(event, () => {
+                                if (!assistantDiv) {
+                                    assistantDiv = addMessage("", "assistant");
+                                }
+                                return assistantDiv;
+                            });
+                        } catch (e) {
+                            console.error("Failed to parse event:", e);
+                        }
+                    }
+                }
+
+                // Process any remaining buffer
+                if (buffer.trim()) {
+                    try {
+                        const event = JSON.parse(buffer);
+                        handleStreamEvent(event, () => {
+                            if (!assistantDiv) {
+                                assistantDiv = addMessage("", "assistant");
+                            }
+                            return assistantDiv;
+                        });
+                    } catch (e) {
+                        console.error("Failed to parse final event:", e);
+                    }
+                }
+
+                addSystemMessage("✓ Response complete");
+
+            } catch (error) {
+                addSystemMessage(`❌ Error: ${error.message}`, true);
+            } finally {
+                isLoading = false;
+                promptInput.disabled = false;
+                modelSelect.disabled = false;
+                sendButton.disabled = false;
+                promptInput.focus();
+            }
+        }
+
+        function handleStreamEvent(event, getAssistantDiv) {
+            const eventType = event.type || "";
+            const eventData = event.data || {};
+
+            if (eventType === "assistant.message_delta") {
+                const deltaContent = eventData.deltaContent || "";
+                if (deltaContent) {
+                    const div = getAssistantDiv();
+                    const textNode = div.querySelector(".message-text");
+                    if (textNode) {
+                        textNode.textContent += deltaContent;
+                    }
+                }
+            } else if (eventType === "session.usage" || eventType === "assistant.usage") {
+                displayUsageMetrics(eventData);
+            } else if (eventType === "session.idle") {
+                // Session is idle - handled by final system message
+            }
+        }
+
+        function displayUsageMetrics(usage) {
+            // Find or create stats container
+            let statsDiv = document.getElementById("statsDiv");
+            if (!statsDiv) {
+                statsDiv = document.createElement("div");
+                statsDiv.id = "statsDiv";
+                statsDiv.className = "message system";
+                statsDiv.innerHTML = '<strong>📊 Usage Metrics</strong><div class="stats-grid"></div>';
+                outputArea.appendChild(statsDiv);
+            }
+
+            const statsGrid = statsDiv.querySelector(".stats-grid");
+            statsGrid.innerHTML = ""; // Clear previous stats
+
+            if (usage.inputTokens !== undefined) {
+                statsGrid.innerHTML += `
+                    <div class="stat-item">
+                        <div class="stat-label">Input Tokens</div>
+                        <div class="stat-value">${usage.inputTokens}</div>
+                    </div>
+                `;
+            }
+
+            if (usage.outputTokens !== undefined) {
+                statsGrid.innerHTML += `
+                    <div class="stat-item">
+                        <div class="stat-label">Output Tokens</div>
+                        <div class="stat-value">${usage.outputTokens}</div>
+                    </div>
+                `;
+            }
+
+            if (usage.cacheReadTokens && usage.cacheReadTokens > 0) {
+                statsGrid.innerHTML += `
+                    <div class="stat-item">
+                        <div class="stat-label">Cache Read</div>
+                        <div class="stat-value">${usage.cacheReadTokens}</div>
+                    </div>
+                `;
+            }
+
+            if (usage.cost !== undefined) {
+                statsGrid.innerHTML += `
+                    <div class="stat-item">
+                        <div class="stat-label">Cost</div>
+                        <div class="stat-value">$${usage.cost.toFixed(6)}</div>
+                    </div>
+                `;
+            }
+
+            if (usage.model) {
+                statsGrid.innerHTML += `
+                    <div class="stat-item">
+                        <div class="stat-label">Model</div>
+                        <div class="stat-value">${usage.model}</div>
+                    </div>
+                `;
+            }
+
+            // Display quota info if available
+            if (usage.quotaSnapshots) {
+                for (const [model, quota] of Object.entries(usage.quotaSnapshots)) {
+                    if (quota.isUnlimitedEntitlement) {
+                        statsGrid.innerHTML += `
+                            <div class="quota-info">
+                                <strong>${model}</strong>
+                                Unlimited entitlement
+                            </div>
+                        `;
+                    } else {
+                        const remaining = quota.remainingPercentage || 0;
+                        statsGrid.innerHTML += `
+                            <div class="quota-info">
+                                <strong>${model}</strong>
+                                Used: ${quota.usedRequests}/${quota.entitlementRequests} (${remaining}% remaining)
+                            </div>
+                        `;
+                    }
+                }
+            }
+        }
+
+        function addMessage(text, type) {
+            // Remove empty state if present
+            const emptyState = outputArea.querySelector(".empty-state");
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const div = document.createElement("div");
+            div.className = `message ${type}`;
+
+            if (type === "assistant") {
+                div.innerHTML = '<div class="message-text"></div>';
+                div.querySelector(".message-text").textContent = text;
+            } else {
+                div.textContent = text;
+            }
+
+            outputArea.appendChild(div);
+            outputArea.scrollTop = outputArea.scrollHeight;
+
+            return div;
+        }
+
+        function addSystemMessage(text, isError = false) {
+            addMessage(text, isError ? "error" : "system");
+        }
+
+        // Auto-scroll when new content arrives
+        const observer = new MutationObserver(() => {
+            outputArea.scrollTop = outputArea.scrollHeight;
+        });
+
+        observer.observe(outputArea, { childList: true, subtree: true, characterData: true });
+    </script>
+</body>
+</html>
