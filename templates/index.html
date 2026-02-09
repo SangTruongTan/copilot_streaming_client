@@ -271,6 +271,57 @@
             margin-bottom: 4px;
             color: #b45309;
         }
+
+        .tool-call {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .tool-call .tool-header {
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 6px;
+        }
+
+        .tool-call .tool-args {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 6px;
+            overflow-x: auto;
+        }
+
+        .tool-result {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .tool-result .tool-header {
+            font-weight: 600;
+            color: #065f46;
+            margin-bottom: 6px;
+        }
+
+        .tool-result .tool-output {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 6px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
@@ -440,11 +491,65 @@
                         textNode.textContent += deltaContent;
                     }
                 }
+            } else if (eventType === "tool.call") {
+                // Display tool call
+                displayToolCall(eventData);
+            } else if (eventType === "tool.result") {
+                // Display tool result
+                displayToolResult(eventData);
             } else if (eventType === "session.usage" || eventType === "assistant.usage") {
                 displayUsageMetrics(eventData);
             } else if (eventType === "session.idle") {
                 // Session is idle - handled by final system message
             }
+        }
+
+        function displayToolCall(data) {
+            const toolName = data.name || "unknown";
+            const toolArgs = data.arguments || {};
+
+            const div = document.createElement("div");
+            div.className = "tool-call";
+            
+            let html = `<div class="tool-header">🔧 Tool Call: ${toolName}</div>`;
+            
+            if (Object.keys(toolArgs).length > 0) {
+                html += `<div class="tool-args">${JSON.stringify(toolArgs, null, 2)}</div>`;
+            }
+            
+            div.innerHTML = html;
+            outputArea.appendChild(div);
+            outputArea.scrollTop = outputArea.scrollHeight;
+        }
+
+        function displayToolResult(data) {
+            const toolName = data.name || "unknown";
+            const result = data.result || {};
+
+            const div = document.createElement("div");
+            div.className = "tool-result";
+            
+            let html = `<div class="tool-header">✓ Tool Result: ${toolName}</div>`;
+            
+            // Extract text content if available
+            let outputText = "";
+            if (result.content && Array.isArray(result.content)) {
+                for (const item of result.content) {
+                    if (item.type === "text") {
+                        outputText += item.text;
+                    }
+                }
+            } else {
+                outputText = JSON.stringify(result, null, 2);
+            }
+            
+            if (outputText) {
+                html += `<div class="tool-output">${outputText}</div>`;
+            }
+            
+            div.innerHTML = html;
+            outputArea.appendChild(div);
+            outputArea.scrollTop = outputArea.scrollHeight;
         }
 
         function displayUsageMetrics(usage) {

@@ -248,9 +248,11 @@ class StreamingClient:
         """Start Copilot CLI server"""
         print("[*] Starting Copilot CLI...")
 
-        # Start Copilot CLI in server mode (streaming is controlled per-session, not here)
+        # Start Copilot CLI in server mode with MCP config
+        # Use --additional-mcp-config to enable MCP server support
         self.process = subprocess.Popen(
-            [self.cli_path, "--headless", "--no-auto-update", "--stdio"],
+            [self.cli_path, "--headless", "--no-auto-update", "--stdio", 
+             "--additional-mcp-config", "mcp_config.json"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -380,6 +382,29 @@ async def main():
             # Full message received (all deltas complete)
             print()
 
+        elif event_type == "tool.call":
+            # Tool is being called
+            tool_name = event_data.get("name", "unknown")
+            tool_args = event_data.get("arguments", {})
+            print(f"\n[🔧 Tool Call] {tool_name}")
+            if tool_args:
+                print(f"   Arguments: {json.dumps(tool_args, indent=2)}")
+
+        elif event_type == "tool.result":
+            # Tool result received
+            tool_name = event_data.get("name", "unknown")
+            result = event_data.get("result", {})
+            print(f"\n[✓ Tool Result] {tool_name}")
+            
+            # Extract text content if available
+            if isinstance(result, dict) and "content" in result:
+                content_list = result.get("content", [])
+                for item in content_list:
+                    if isinstance(item, dict) and item.get("type") == "text":
+                        print(f"   {item.get('text', '')}")
+            else:
+                print(f"   {json.dumps(result, indent=2)}")
+
         elif event_type == "session.usage" or event_type == "assistant.usage":
             # Capture usage metrics (tokens, cost, etc.)
             usage_info.update(event_data)
@@ -452,8 +477,9 @@ async def main():
 
     # Send a prompt
     print("\n[>>] Sending prompt...\n")
-    # await session.send("Explain what APIs are in 2-3 sentences")
-    await session.send("Could you please write a 200 words paragraph to describe the New York city?")
+    # Example: Ask for system information to trigger MCP tools
+    await session.send("What's my current system information? Check CPU, memory, and disk usage.")
+    # await session.send("Could you please write a 200 words paragraph to describe the New York city?")
 
     # Wait for session to become idle (or timeout after 15 seconds)
     try:

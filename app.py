@@ -32,6 +32,7 @@ async def get_client() -> StreamingClient:
 
     async with startup_lock:
         if client is None:
+            # Create client with MCP support
             client = StreamingClient()
             await client.start()
 
