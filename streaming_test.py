@@ -252,7 +252,7 @@ class StreamingClient:
         # Use --additional-mcp-config to enable MCP server support
         self.process = subprocess.Popen(
             [self.cli_path, "--headless", "--no-auto-update", "--stdio", 
-             "--additional-mcp-config", "mcp_config.json"],
+             "--additional-mcp-config", "@./mcp_config.json"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

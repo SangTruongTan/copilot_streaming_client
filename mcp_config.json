@@ -3,7 +3,9 @@
     "system-info": {
       "command": "/home/linuxbrew/.linuxbrew/bin/python",
       "args": ["mcp_server.py"],
-      "env": {}
+      "env": {},
+      "tools": ["*"],
+      "type": "local"
     }
   }
 }
