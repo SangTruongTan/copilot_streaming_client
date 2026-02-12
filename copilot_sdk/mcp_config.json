@@ -13,6 +13,13 @@
       "tools": ["*"],
       "args": ["--log-file", "./gerrit_mcp.log", "--log-level", "DEBUG", "--config-file", "./gerrit_mcp_config.json"],
       "cwd": "."
+    },
+    "mcp-atlassian": {
+      "type": "local",
+      "command": "python3",
+      "tools": ["*"],
+      "args": ["./copilot_sdk/mcp_atlassian_wrapper.py", "--config-file", "./copilot_sdk/mcp_atlassian_env.json"],
+      "cwd": "."
     }
   }
 }
