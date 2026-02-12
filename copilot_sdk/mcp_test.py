@@ -32,6 +32,21 @@ async def main():
                 "--config-file",
                 "./copilot_sdk/gerrit_mcp_config.json"
             ]
+        },
+        "mcp-atlassian": {
+            "type": "local",
+            "command": sys.executable,
+            "tools": ["*"],
+            "cwd": str(project_root),
+            "args": [
+                str(base_dir / "mcp_atlassian_wrapper.py"),
+                "--config-file",
+                str(base_dir / "mcp_atlassian_env.json"),
+                "--command",
+                "uvx",
+                "--package",
+                "mcp-atlassian"
+            ]
         }
     }
 
@@ -59,7 +74,7 @@ async def main():
 
     await session.send_and_wait(
         {
-            "prompt": "Use Gerrit MCP tool to describe and analyze this code change: http://gpro.lge.com/c/nvidia/meta-lg-webos/+/485543"
+            "prompt": "Use mcp Atlassian tool to check this ticket: http://jira.lge.com/issue/browse/GRAPHICDV-7691"
         },
         timeout=300
     )
