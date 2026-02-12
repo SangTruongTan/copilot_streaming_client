@@ -1,0 +1,24 @@
+{
+  "servers": {
+    "local-notes-app": {
+      "tools": ["*"],
+      "type": "stdio",
+      "command": "python",
+      "args": ["copilot_sdk/server.py"],
+      "cwd": "."
+    },
+    "gerrit-mcp": {
+      "type": "local",
+      "command": "mcp-server-gerrit",
+      "tools": ["*"],
+      "args": [],
+      "env": {
+        "GERRIT_URL": "http://lamp.lge.com/review,http://gpro.lge.com,http://vgit.lge.com/eu,https://wall.lge.com",
+        "GERRIT_USERNAME": "tu4.tran",
+        "GERRIT_PASSWORD": "tVt2002!@#,tVt2002!@#,Bj3b1SG5AZoDGsh9datHdkk+KTD2p397427/Ez47ig,tVt2002!@#",
+        "MCP_WORKSPACE_TEMP_DIR": "/tmp/gerrit_workspace",
+        "GERRIT_DISABLE_SSL_VERIFY": "false"
+      }
+    }
+  }
+}
